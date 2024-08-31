@@ -1,0 +1,56 @@
+0001   0000                     org 0000h       ; Inicio del código en 0x0000
+0002   0000             
+0003   0000                     ; Cargar los números en B y C (en hexadecimal)
+0004   0000 16 35               ld  D, 35h      ; Primer número en D (53 decimal)
+0005   0002 1E 27               ld  E, 27h      ; Segundo número en E (39 decimal)
+0006   0004             
+0007   0004                     ; Realizar la suma
+0008   0004 7A                  ld  A, D        ; Poner lo que hay en D en A
+0009   0005 83                  add A, E        ; A = D + E
+0010   0006             
+0011   0006                     ; Guardar el resultado de la suma en C
+0012   0006                     ; C ahora tiene la suma en hexadecimal (0x5C, que es 92 decimal)
+0013   0006             
+0014   0006                     ; Convertir el resultado a BCD
+0015   0006 CD 0D 00            call CONVERT_BCD
+0016   0009 78          	ld A, B
+0017   000A                     ; A contiene las centenas
+0018   000A                     ; H contiene las decenas
+0019   000A                     ; L contiene las unidades
+0020   000A                      ; Fin del programa
+0021   000A C3 27 00            jp FIN          ; Saltar a la instrucción de fin
+0022   000D             
+0023   000D             ; Subrutina para convertir un número binario a BCD
+0024   000D             CONVERT_BCD:
+0025   000D                 ; C contiene el número a convertir
+0026   000D                 ; Usaremos los registros B, H y L para almacenar las centenas, decenas y unidades
+0027   000D             
+0028   000D 06 00           ld  B, 0       ; Inicializar B para las centenas
+0029   000F 26 00           ld  H, 0       ; Inicializar H para las decenas
+0030   0011 2E 00           ld  L, 0       ; Inicializar L para las unidades
+0031   0013             
+0032   0013             CENTENAS:
+0033   0013 FE 64           cp  100        ; Comparar A con 100 (centenas)
+0034   0015 38 05           jr  C, DECENAS ; Si A < 100, saltar a las decenas
+0035   0017 D6 64           sub 100        ; Restar 100 de A
+0036   0019 04              inc B          ; Incrementar B (centenas)
+0037   001A 18 F7           jr  CENTENAS   ; Repetir hasta que A < 100
+0038   001C             
+0039   001C             DECENAS:
+0040   001C FE 0A           cp  10         ; Comparar D con 10 (decenas)
+0041   001E 38 05           jr  C, UNIDADES; Si A < 10, saltar a las unidades
+0042   0020 D6 0A           sub 10         ; Restar 10 de A
+0043   0022 24              inc H          ; Incrementar H (decenas)
+0044   0023 18 F7           jr  DECENAS    ; Repetir hasta que A < 10
+0045   0025             
+0046   0025             UNIDADES:
+0047   0025 6F              ld L, A        ; Colocar el valor restante de A en L (unidades)
+0048   0026 C9              ret             ; Regresar al programa principal
+0049   0027             
+0050   0027             FIN:
+0051   0027                     ; Instrucción de fin
+0052   0027 00                  nop            ; No hace nada, pero asegura estabilidad
+0053   0028 C3 27 00            jp FIN         ; Ciclo infinito para finalizar el programa
+0054   002B             
+0055   002B                     .end           ; Fin del código fuente
+Number of errors = 0
