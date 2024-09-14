@@ -1,0 +1,137 @@
+0001   0000             ; Definición de constantes
+0002   0000             MAX_ATTEMPTS EQU 3
+0003   0000             
+0004   0000             ; Definición de variables
+0005   0000 00          attempts     DB 0         ; Contador de intentos
+0006   0001 00 00 00 00 input_buffer DB 0, 0, 0, 0 ; Buffer para almacenar la clave ingresada
+0007   0005             
+0008   0005             ; Definición de la clave correcta
+0009   0005 31 32 33 34 CORRECT_KEY  DB '1', '2', '3', '4' ; Clave correcta como bytes
+0010   0009             
+0011   0009             .org 0010h
+0012   0010             START:
+0013   0010                 ; Mostrar mensaje para solicitar la clave
+0014   0010 21 81 00        LD HL, MSG_REQUEST
+0015   0013 CD 72 00        CALL PRINT_STRING
+0016   0016             
+0017   0016                 ; Inicializar el contador de intentos
+0018   0016 3E 00           LD A, 0
+0019   0018 32 00 00        LD (attempts), A
+0020   001B             
+0021   001B             INPUT_LOOP:
+0022   001B                 ; Inicializar el buffer de entrada
+0023   001B 21 01 00        LD HL, input_buffer
+0024   001E 06 04           LD B, 4
+0025   0020             
+0026   0020             READ_DIGIT:
+0027   0020                 ; Esperar la entrada del usuario
+0028   0020 CD 7E 00        CALL GET_CHAR
+0029   0023             
+0030   0023                 ; Verificar si el carácter es un número
+0031   0023 FE 30           CP '0'
+0032   0025 38 42           JR C, ERROR_NON_DIGIT
+0033   0027 FE 3A           CP '9' + 1
+0034   0029 30 3E           JR NC, ERROR_NON_DIGIT
+0035   002B             
+0036   002B                 ; Almacenar el dígito en el buffer
+0037   002B 77              LD (HL), A
+0038   002C 23              INC HL
+0039   002D             
+0040   002D                 ; Ocultar el dígito con un asterisco
+0041   002D 3E 2A           LD A, '*'
+0042   002F CD 7B 00        CALL PRINT_CHAR
+0043   0032             
+0044   0032                 ; Decrementar el contador de dígitos
+0045   0032 10 EC           DJNZ READ_DIGIT
+0046   0034             
+0047   0034                 ; Verificar la clave ingresada
+0048   0034 21 01 00        LD HL, input_buffer
+0049   0037 11 05 00        LD DE, CORRECT_KEY
+0050   003A 06 04           LD B, 4
+0051   003C             
+0052   003C             VERIFY_LOOP:
+0053   003C 1A              LD A, (DE)
+0054   003D 4F              LD C, A          ; Cargar el byte de la dirección apuntada por DE en C (clave correcta)
+0055   003E 7E              LD A, (HL)       ; Cargar el byte desde el buffer de entrada en A (clave ingresada)
+0056   003F B9              CP C            ; Comparar A con C
+0057   0040 20 0C           JR NZ, INCORRECT_KEY ; Si no son iguales, saltar a INCORRECT_KEY
+0058   0042 23              INC HL          ; Avanzar al siguiente byte en input_buffer
+0059   0043 13              INC DE          ; Avanzar al siguiente byte en CORRECT_KEY
+0060   0044 10 F6           DJNZ VERIFY_LOOP ; Repetir hasta que se comparen todos los bytes
+0061   0046             
+0062   0046                 ; Clave correcta
+0063   0046 21 91 00        LD HL, MSG_CORRECT
+0064   0049 CD 72 00        CALL PRINT_STRING
+0065   004C 18 23           JR END
+0066   004E             
+0067   004E             INCORRECT_KEY:
+0068   004E                 ; Incrementar el contador de intentos
+0069   004E 3A 00 00        LD A, (attempts)
+0070   0051 3C              INC A
+0071   0052 32 00 00        LD (attempts), A
+0072   0055             
+0073   0055                 ; Verificar si se han excedido los intentos
+0074   0055 FE 03           CP MAX_ATTEMPTS
+0075   0057 28 08           JR Z, ACCESS_BLOCKED
+0076   0059             
+0077   0059                 ; Clave incorrecta
+0078   0059 21 A1 00        LD HL, MSG_INCORRECT
+0079   005C CD 72 00        CALL PRINT_STRING
+0080   005F 18 BA           JR INPUT_LOOP
+0081   0061             
+0082   0061             ACCESS_BLOCKED:
+0083   0061                 ; Acceso bloqueado
+0084   0061 21 B1 00        LD HL, MSG_BLOCKED
+0085   0064 CD 72 00        CALL PRINT_STRING
+0086   0067 18 08           JR END
+0087   0069             
+0088   0069             ERROR_NON_DIGIT:
+0089   0069                 ; Mostrar mensaje de error y volver a solicitar la clave
+0090   0069 21 C1 00        LD HL, MSG_ERROR
+0091   006C CD 72 00        CALL PRINT_STRING
+0092   006F 18 AA           JR INPUT_LOOP
+0093   0071             
+0094   0071             END:
+0095   0071                 ; Fin del programa
+0096   0071 76              HALT
+0097   0072             
+0098   0072             PRINT_STRING:
+0099   0072                 ; Imprimir una cadena de texto terminada en 0
+0100   0072 7E              LD A, (HL)
+0101   0073 B7              OR A
+0102   0074 C8              RET Z
+0103   0075 CD 7B 00        CALL PRINT_CHAR
+0104   0078 23              INC HL
+0105   0079 18 F7           JR PRINT_STRING
+0106   007B             
+0107   007B             PRINT_CHAR:
+0108   007B D3 00           OUT (00), A     ; Enviar el carácter en A al puerto de salida conectado a la pantalla
+0109   007D C9              RET
+0110   007E             
+0111   007E             GET_CHAR:
+0112   007E DB 01           IN A, (01)      ; Leer un carácter del puerto de entrada conectado al teclado
+0113   0080 C9              RET
+0114   0081             
+0115   0081             ; Mensajes de texto
+0116   0081 49 6E 67 72 MSG_REQUEST:  DB "Ingrese clave: ", 0
+0116   0085 65 73 65 20 
+0116   0089 63 6C 61 76 
+0116   008D 65 3A 20 00 
+0117   0091 43 6C 61 76 MSG_CORRECT:  DB "Clave correcta!", 0
+0117   0095 65 20 63 6F 
+0117   0099 72 72 65 63 
+0117   009D 74 61 21 00 
+0118   00A1 43 6C 61 76 MSG_INCORRECT: DB "Clave incorrect", 0
+0118   00A5 65 20 69 6E 
+0118   00A9 63 6F 72 72 
+0118   00AD 65 63 74 00 
+0119   00B1 41 63 63 65 MSG_BLOCKED:  DB "Acceso bloquead", 0
+0119   00B5 73 6F 20 62 
+0119   00B9 6C 6F 71 75 
+0119   00BD 65 61 64 00 
+0120   00C1 53 6F 6C 6F MSG_ERROR:    DB "Solo numeros!!", 0
+0120   00C5 20 6E 75 6D 
+0120   00C9 65 72 6F 73 
+0120   00CD 21 21 00    
+0121   00D0             
+Number of errors = 0
